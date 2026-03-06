@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/triton2/__init__.py
+src/triton2/client.py
+src/triton2/codec.py
+src/triton2/constants.py
+src/triton2/exceptions.py
+src/triton2/registers.py
+src/triton2/stream.py
+src/triton2_modbus.egg-info/PKG-INFO
+src/triton2_modbus.egg-info/SOURCES.txt
+src/triton2_modbus.egg-info/dependency_links.txt
+src/triton2_modbus.egg-info/requires.txt
+src/triton2_modbus.egg-info/top_level.txt
+tests/test_client.py
+tests/test_codec.py
+tests/test_stream.py

@@ -1,0 +1,8 @@
+pymodbus[serial]>=3.0
+numpy>=1.20
+
+[dev]
+pytest>=7
+
+[pandas]
+pandas>=1.3
