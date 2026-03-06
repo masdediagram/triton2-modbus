@@ -2,11 +2,20 @@
 
 Python library for the **Triton2** capacitive liquid level sensor over Modbus RTU (RS485). Optimized for read speed with batch reads and optional high-speed streaming into buffers (numpy, pandas, CSV).
 
-## Install
+## Clone and install
+
+Clone the repository and install the package in editable mode:
 
 ```bash
+git clone https://github.com/user/triton2-modbus.git
+cd triton2-modbus
 pip install -e .
-# For pandas export (reader.to_dataframe()): pip install triton2-modbus[pandas]
+```
+
+For pandas export (`reader.to_dataframe()`), install the optional extra:
+
+```bash
+pip install -e ".[pandas]"
 ```
 
 Requires: Python 3.9+, `pymodbus[serial]`, `numpy`.
@@ -66,8 +75,3 @@ Protected registers (e.g. baud rate, slave ID) can only be written in configurat
 3. `t2.apply_config()` — saves and reboots (or `t2.exit_config_mode()` to abort).
 
 **Warning:** After changing baud or slave ID, the device must receive at least one successful Modbus transaction within 5 minutes or it will revert to the previous settings. Ensure your host uses the new settings immediately after reboot.
-
-## References
-
-- Technical guide: `references/guia-tecnica-triton2.md`
-- Register map: `references/registers-definitions.md`
