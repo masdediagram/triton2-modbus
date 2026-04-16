@@ -27,11 +27,20 @@ Requires-Dist: pytest>=7; extra == "dev"
 
 Python library for the **Triton2** capacitive liquid level sensor over Modbus RTU (RS485). Optimized for read speed with batch reads and optional high-speed streaming into buffers (numpy, pandas, CSV).
 
-## Install
+## Clone and install
+
+Clone the repository and install the package in editable mode:
 
 ```bash
+git clone https://github.com/user/triton2-modbus.git
+cd triton2-modbus
 pip install -e .
-# For pandas export (ChannelBuffer.to_dataframe): pip install triton2-modbus[pandas]
+```
+
+For pandas export (`reader.to_dataframe()`), install the optional extra:
+
+```bash
+pip install -e ".[pandas]"
 ```
 
 Requires: Python 3.9+, `pymodbus[serial]`, `numpy`.
@@ -54,22 +63,22 @@ with Triton2Client("COM3", slave=1) as t2:
 
 ## High-speed streaming
 
-Use `ChannelStreamReader` to sample at maximum rate and store in a `ChannelBuffer`, then export to numpy, pandas, or CSV:
+Use `ChannelStreamReader` to sample at maximum rate; it has an integrated buffer. Pass a list of `Channel` enums (`CH1_CAL`, `CH2_CAL`, … `CH4_RAW`); by default all channels are read. The reader only requests the registers needed for those channels (e.g. raw-only uses one 10-word read).
 
 ```python
-from triton2 import Triton2Client, ChannelStreamReader, ChannelBuffer
+from triton2 import Triton2Client, ChannelStreamReader, Channel, ALL_CHANNELS
 
 with Triton2Client("COM3") as client:
-    buffer = ChannelBuffer()  # default: all 4 calibrated channels
-    reader = ChannelStreamReader(client, buffer=buffer, channels="calibrated")
+    reader = ChannelStreamReader(client)  # default: all channels
+    # Or a subset: channels=[Channel.CH1_CAL, Channel.CH2_CAL]
 
-    reader.read_n(1000)   # collect 1000 samples as fast as possible
-    arr = buffer.to_numpy()           # shape (1000, 5): timestamp_ms + ch1..ch4
-    buffer.to_csv("samples.csv")      # or save to CSV
+    reader.read_n(1000)              # collect 1000 samples as fast as possible
+    arr = reader.to_numpy()          # columns: timestamp_ms, ch1_cal, ch2_cal, ...
+    reader.to_csv("samples.csv")
 
-    buffer.clear()
+    reader.clear()
     reader.read_for(10.0, poll_interval_sec=None)  # 10 s at max rate
-    df = buffer.to_dataframe()  # requires pip install triton2-modbus[pandas]
+    df = reader.to_dataframe()       # requires pip install triton2-modbus[pandas]
 ```
 
 ## Two-point calibration
@@ -91,8 +100,3 @@ Protected registers (e.g. baud rate, slave ID) can only be written in configurat
 3. `t2.apply_config()` — saves and reboots (or `t2.exit_config_mode()` to abort).
 
 **Warning:** After changing baud or slave ID, the device must receive at least one successful Modbus transaction within 5 minutes or it will revert to the previous settings. Ensure your host uses the new settings immediately after reboot.
-
-## References
-
-- Technical guide: `references/guia-tecnica-triton2.md`
-- Register map: `references/registers-definitions.md`

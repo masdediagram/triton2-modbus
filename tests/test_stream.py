@@ -168,7 +168,7 @@ def test_channel_stream_reader_raw_only_reads_10_words(MockSerialClient):
     reader.read_one()
     mock_client.read_holding_registers.assert_called_once()
     call = mock_client.read_holding_registers.call_args
-    assert call[0][1] == 10  # count=10 (timestamp+raw only)
+    assert call.kwargs["count"] == 10  # timestamp+raw only
 
 
 @patch("triton2.client.ModbusSerialClient")

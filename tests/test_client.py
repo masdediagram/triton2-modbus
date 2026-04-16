@@ -78,8 +78,9 @@ def test_read_all_calibrated_batch(MockSerialClient):
     assert cal == {1: 1.0, 2: 2.0, 3: 3.0, 4: 4.0}
     mock_client.read_holding_registers.assert_called_once()
     call = mock_client.read_holding_registers.call_args
-    assert call[0][0] == 26  # ADDR_ALL_CAL
-    assert call[0][1] == 8  # COUNT_ALL_CAL
+    assert call.args[0] == 26  # ADDR_ALL_CAL
+    assert call.kwargs["count"] == 8  # COUNT_ALL_CAL
+    assert call.kwargs["device_id"] == 1
 
 
 @patch("triton2.client.ModbusSerialClient")
@@ -110,9 +111,9 @@ def test_write_register(MockSerialClient):
     t2.reset()
     mock_client.write_register.assert_called_once()
     call = mock_client.write_register.call_args
-    assert call[0][0] == 10  # M_REG_COMMAND
-    assert call[0][1] == 100  # CMD_RESET
-    assert call[1]["slave"] == 1
+    assert call.args[0] == 10  # M_REG_COMMAND
+    assert call.args[1] == 100  # CMD_RESET
+    assert call.kwargs["device_id"] == 1
 
 
 @patch("triton2.client.ModbusSerialClient")

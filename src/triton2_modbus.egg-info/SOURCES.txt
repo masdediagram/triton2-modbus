@@ -6,6 +6,7 @@ src/triton2/codec.py
 src/triton2/constants.py
 src/triton2/exceptions.py
 src/triton2/registers.py
+src/triton2/scanner.py
 src/triton2/stream.py
 src/triton2_modbus.egg-info/PKG-INFO
 src/triton2_modbus.egg-info/SOURCES.txt

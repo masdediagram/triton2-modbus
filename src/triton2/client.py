@@ -60,6 +60,8 @@ class Triton2Client:
     """
     Modbus RTU client for Triton2 capacitive level sensor.
     Optimized for read speed with batch reads; optional serial buffer clearing.
+
+    ``timeout`` and ``retries`` configure pymodbus serial I/O (seconds per attempt, retry count).
     """
 
     def __init__(
@@ -68,12 +70,17 @@ class Triton2Client:
         slave: int = 1,
         baudrate: int = 115200,
         clear_serial_before_read: bool = False,
+        *,
+        timeout: float = 3.0,
+        retries: int = 3,
         **serial_kwargs: Any,
     ) -> None:
         self.port = port
         self.slave = slave
         self.baudrate = baudrate
         self.clear_serial_before_read = clear_serial_before_read
+        self.timeout = timeout
+        self.retries = retries
         self._client: ModbusSerialClient | None = None
         self._serial_kwargs = serial_kwargs
 
@@ -87,6 +94,8 @@ class Triton2Client:
             parity="N",
             stopbits=1,
             **self._serial_kwargs,
+            timeout=self.timeout,
+            retries=self.retries,
         )
         if not self._client.connect():
             raise ModbusConnectionError(f"Failed to connect to {self.port}")
@@ -124,7 +133,7 @@ class Triton2Client:
     def _read_registers(self, address: int, count: int) -> list[int]:
         client = self._ensure_connected()
         self._clear_serial_rx()
-        result = client.read_holding_registers(address, count, slave=self.slave)
+        result = client.read_holding_registers(address, count=count, device_id=self.slave)
         if result.isError():
             raise ModbusConnectionError(str(result))
         regs = result.registers
@@ -137,7 +146,7 @@ class Triton2Client:
 
     def _write_register(self, address: int, value: int) -> None:
         client = self._ensure_connected()
-        result = client.write_register(address, value, slave=self.slave)
+        result = client.write_register(address, value, device_id=self.slave)
         if result.isError():
             raise ModbusConnectionError(str(result))
 
@@ -146,7 +155,7 @@ class Triton2Client:
 
     def _write_registers(self, address: int, values: list[int]) -> None:
         client = self._ensure_connected()
-        result = client.write_registers(address, values, slave=self.slave)
+        result = client.write_registers(address, values, device_id=self.slave)
         if result.isError():
             raise ModbusConnectionError(str(result))
 
