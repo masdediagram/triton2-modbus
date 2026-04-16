@@ -8,17 +8,11 @@ from typing import Any
 
 from pymodbus.client import ModbusSerialClient
 
+from .bits import ConfigBit, StatusBit
 from .codec import decode_float_cdab, decode_uint32_cdab, decode_floats_cdab, encode_float_cdab
 from .constants import (
     BAUD_RATES,
     BAUD_RATE_TO_INDEX,
-    BIT_CALIBRATING,
-    BIT_CH1,
-    BIT_CH2,
-    BIT_CH3,
-    BIT_CH4,
-    BIT_CONFIG_MODE,
-    BIT_SENSOR_RUNNING,
     CALIBRATION_COMMANDS,
     CMD_APPLY_CONFIG,
     CMD_CONFIG_MODE,
@@ -219,19 +213,46 @@ class Triton2Client:
         return {"timestamp_ms": timestamp_ms, "raw": {i: raw_floats[i - 1] for i in range(1, 5)}}
 
     def is_calibrating(self) -> bool:
-        return (self.read_status() & BIT_CALIBRATING) != 0
+        return self.read_status_bit(StatusBit.BIT_CALIBRATING)
 
     def is_config_mode(self) -> bool:
-        return (self.read_status() & BIT_CONFIG_MODE) != 0
+        return self.read_status_bit(StatusBit.BIT_CONFIG_MODE)
 
     def is_sensor_running(self) -> bool:
-        return (self.read_status() & BIT_SENSOR_RUNNING) != 0
+        return self.read_status_bit(StatusBit.BIT_SENSOR_RUNNING)
 
     def channel_active(self, channel: int) -> bool:
         if channel not in (1, 2, 3, 4):
             raise ValueError("channel must be 1, 2, 3, or 4")
-        bits = (BIT_CH1, BIT_CH2, BIT_CH3, BIT_CH4)
-        return (self.read_status() & bits[channel - 1]) != 0
+        ch_bits = (
+            StatusBit.BIT_CH1,
+            StatusBit.BIT_CH2,
+            StatusBit.BIT_CH3,
+            StatusBit.BIT_CH4,
+        )
+        return self.read_status_bit(ch_bits[channel - 1])
+
+    def read_status_bit(self, bit: StatusBit) -> bool:
+        """Read a single bit from ``M_REG_STATUS`` (read-only register)."""
+        return (self.read_status() & bit.mask) != 0
+
+    def read_config_bit(self, bit: ConfigBit) -> bool:
+        """Read a single bit from ``M_REG_CONFIG``."""
+        return (self.read_config() & bit.mask) != 0
+
+    def write_config_bit(self, bit: ConfigBit, value: bool) -> None:
+        """
+        Set or clear one bit in ``M_REG_CONFIG`` via read–modify–write.
+
+        Other bits in the word are preserved. CONF registers typically require
+        config mode before changes take effect; see device documentation.
+        """
+        word = self.read_config()
+        if value:
+            word |= bit.mask
+        else:
+            word &= 0xFFFF & ~bit.mask
+        self.write_config(word)
 
     # --- Config mode ---
 

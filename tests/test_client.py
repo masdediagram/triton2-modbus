@@ -3,6 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
+from triton2.bits import ConfigBit, StatusBit
 from triton2.client import Triton2Client
 from triton2.codec import encode_float_cdab
 from triton2.exceptions import ModbusConnectionError
@@ -38,6 +39,36 @@ def test_connect_fails(MockSerialClient):
     t2 = Triton2Client("COM1")
     with pytest.raises(ModbusConnectionError, match="Failed to connect"):
         t2.connect()
+
+
+@patch("triton2.client.ModbusSerialClient")
+def test_read_status_bit(MockSerialClient):
+    mock_client = MagicMock()
+    mock_client.connect.return_value = True
+    mock_client.read_holding_registers.return_value = _mock_result([0x04])  # BIT_SENSOR_RUNNING
+    MockSerialClient.return_value = mock_client
+
+    t2 = Triton2Client("COM1")
+    t2._client = mock_client
+    assert t2.read_status_bit(StatusBit.BIT_SENSOR_RUNNING) is True
+    assert t2.read_status_bit(StatusBit.BIT_SYSTEM_ERROR) is False
+
+
+@patch("triton2.client.ModbusSerialClient")
+def test_read_write_config_bit(MockSerialClient):
+    mock_client = MagicMock()
+    mock_client.connect.return_value = True
+    r_ok = MagicMock()
+    r_ok.isError.return_value = False
+    mock_client.read_holding_registers.return_value = _mock_result([0x00])
+    mock_client.write_register.return_value = r_ok
+    MockSerialClient.return_value = mock_client
+
+    t2 = Triton2Client("COM1")
+    t2._client = mock_client
+    assert t2.read_config_bit(ConfigBit.BIT_ENABLE_CH1) is False
+    t2.write_config_bit(ConfigBit.BIT_ENABLE_CH1, True)
+    mock_client.write_register.assert_called_with(6, 0x0002, device_id=1)
 
 
 @patch("triton2.client.ModbusSerialClient")

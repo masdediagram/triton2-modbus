@@ -1,6 +1,10 @@
 """
 Triton2 Modbus constants: commands, status/config bits, baud rates.
+
+Bit masks are aliases of :class:`bits.StatusBit` / :class:`bits.ConfigBit` (single source of truth).
 """
+
+from .bits import ConfigBit, StatusBit
 
 # --- Commands (M_REG_COMMAND) ---
 CMD_NONE = 0
@@ -20,27 +24,27 @@ CMD_CALIBRATE_CH4_PT0 = 440
 CMD_CALIBRATE_CH4_PT1 = 441
 
 # --- Status bits (M_REG_STATUS, register 0) ---
-BIT_SYSTEM_ERROR = 1 << 0
-BIT_SENSOR_ERROR = 1 << 1
-BIT_SENSOR_RUNNING = 1 << 2
-BIT_CALIBRATING = 1 << 3
-BIT_CH1 = 1 << 4
-BIT_CH2 = 1 << 5
-BIT_CH3 = 1 << 6
-BIT_CH4 = 1 << 7
-BIT_CONFIG_MODE = 1 << 8
-BIT_DUMMY = 1 << 9
+BIT_SYSTEM_ERROR = StatusBit.BIT_SYSTEM_ERROR.mask
+BIT_SENSOR_ERROR = StatusBit.BIT_SENSOR_ERROR.mask
+BIT_SENSOR_RUNNING = StatusBit.BIT_SENSOR_RUNNING.mask
+BIT_CALIBRATING = StatusBit.BIT_CALIBRATING.mask
+BIT_CH1 = StatusBit.BIT_CH1.mask
+BIT_CH2 = StatusBit.BIT_CH2.mask
+BIT_CH3 = StatusBit.BIT_CH3.mask
+BIT_CH4 = StatusBit.BIT_CH4.mask
+BIT_CONFIG_MODE = StatusBit.BIT_CONFIG_MODE.mask
+BIT_DUMMY = StatusBit.BIT_DUMMY.mask
 
 # --- Config bits (M_REG_CONFIG, register 6) ---
-BIT_RESET = 1 << 0
-BIT_ENABLE_CH1 = 1 << 1
-BIT_ENABLE_CH2 = 1 << 2
-BIT_ENABLE_CH3 = 1 << 3
-BIT_ENABLE_CH4 = 1 << 4
-BIT_ENABLE_ACTIVE_GUARD = 1 << 5
-BIT_DISABLE_DIGITAL = 1 << 6
-BIT_DISABLE_ANALOG = 1 << 7
-BIT_EMPTY = 1 << 8
+BIT_RESET = ConfigBit.BIT_RESET.mask
+BIT_ENABLE_CH1 = ConfigBit.BIT_ENABLE_CH1.mask
+BIT_ENABLE_CH2 = ConfigBit.BIT_ENABLE_CH2.mask
+BIT_ENABLE_CH3 = ConfigBit.BIT_ENABLE_CH3.mask
+BIT_ENABLE_CH4 = ConfigBit.BIT_ENABLE_CH4.mask
+BIT_ENABLE_ACTIVE_GUARD = ConfigBit.BIT_ENABLE_ACTIVE_GUARD.mask
+BIT_DISABLE_DIGITAL = ConfigBit.BIT_DISABLE_DIGITAL.mask
+BIT_DISABLE_ANALOG = ConfigBit.BIT_DISABLE_ANALOG.mask
+BIT_EMPTY = ConfigBit.BIT_EMPTY.mask
 
 # --- Baud rate index -> bps (M_REG_BAUD_RATE) ---
 BAUD_RATES: dict[int, int] = {
