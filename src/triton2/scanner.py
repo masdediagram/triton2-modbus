@@ -4,6 +4,8 @@ Simple Modbus RTU device scanner: find which slave IDs respond on the bus.
 
 from __future__ import annotations
 
+import logging
+
 from pymodbus.client import ModbusSerialClient
 from pymodbus.exceptions import ModbusIOException
 
@@ -23,7 +25,15 @@ class DeviceScanner:
 
     ``timeout`` and ``retries`` are passed to pymodbus (per-request wait and retry count);
     lower values speed up scans over empty IDs.
+
+    ``verbose``: when False (default), pymodbus log noise for this connection is reduced:
+    empty-slave probes log at ERROR/DEBUG in pymodbus; the ``pymodbus.logging`` logger is
+    set to CRITICAL so those expected timeouts stay quiet. Set True to use DEBUG on that
+    logger so frame traffic and retry messages appear if your handlers emit them.
     """
+
+    _PYMODBUS_LOG = "pymodbus.logging"
+    _QUIET_PYMODBUS_LEVEL = logging.CRITICAL
 
     def __init__(
         self,
@@ -34,6 +44,7 @@ class DeviceScanner:
         *,
         timeout: float = 3.0,
         retries: int = 3,
+        verbose: bool = False,
         **serial_kwargs: object,
     ) -> None:
         self.port = port
@@ -42,29 +53,53 @@ class DeviceScanner:
         self.probe_count = probe_count
         self.timeout = timeout
         self.retries = retries
+        self.verbose = verbose
         self._serial_kwargs = serial_kwargs
         self._client: ModbusSerialClient | None = None
+        self._saved_pymodbus_log_level: int | None = None
+
+    def _apply_pymodbus_log_level(self) -> None:
+        if self._saved_pymodbus_log_level is not None:
+            return
+        log = logging.getLogger(self._PYMODBUS_LOG)
+        self._saved_pymodbus_log_level = log.level
+        log.setLevel(logging.DEBUG if self.verbose else self._QUIET_PYMODBUS_LEVEL)
+
+    def _restore_pymodbus_log_level(self) -> None:
+        if self._saved_pymodbus_log_level is None:
+            return
+        logging.getLogger(self._PYMODBUS_LOG).setLevel(self._saved_pymodbus_log_level)
+        self._saved_pymodbus_log_level = None
 
     def connect(self) -> None:
         if self._client is not None:
             return
-        self._client = ModbusSerialClient(
-            port=self.port,
-            baudrate=self.baudrate,
-            bytesize=8,
-            parity="N",
-            stopbits=1,
-            **self._serial_kwargs,
-            timeout=self.timeout,
-            retries=self.retries,
-        )
-        if not self._client.connect():
+        self._apply_pymodbus_log_level()
+        try:
+            self._client = ModbusSerialClient(
+                port=self.port,
+                baudrate=self.baudrate,
+                bytesize=8,
+                parity="N",
+                stopbits=1,
+                **self._serial_kwargs,
+                timeout=self.timeout,
+                retries=self.retries,
+            )
+            connected = self._client.connect()
+        except BaseException:
+            self._restore_pymodbus_log_level()
+            self._client = None
+            raise
+        if not connected:
+            self._restore_pymodbus_log_level()
             raise ModbusConnectionError(f"Failed to connect to {self.port}")
 
     def close(self) -> None:
         if self._client is not None:
             self._client.close()
             self._client = None
+        self._restore_pymodbus_log_level()
 
     def __enter__(self) -> DeviceScanner:
         self.connect()
